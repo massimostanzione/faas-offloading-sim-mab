@@ -1,0 +1,116 @@
+classes:
+  - name: standard
+    max_resp_time: 0.500
+    utility: 0.01
+    arrival_weight: 0.7
+  - name: critical-1
+    max_resp_time: 0.500
+    utility: 1.0
+    arrival_weight: 0.1
+  - name: critical-2
+    max_resp_time: 0.500
+    utility: 1.0
+    deadline_penalty: 0.75
+    drop_penalty: 0.75
+    arrival_weight: 0.1
+  - name: batch
+    max_resp_time: 100.0
+    utility: 1.0
+    arrival_weight: 0.1
+nodes:
+  - name: cloud1
+    region: cloud
+    cost: 0.000005
+    policy: "cloud"
+    speedup: 0.5
+    memory: 8000
+  - name: cloud2
+    region: cloud
+    cost: 0.000005
+    policy: "cloud"
+    speedup: 0.5
+    memory: 8000
+  - name: cloud3
+    region: cloud
+    cost: 0.00001
+    policy: "cloud"
+    speedup: 1.0
+    memory: 16000
+  - name: cloud4
+    region: cloud
+    cost: 0.00001
+    policy: "cloud"
+    speedup: 1.0
+    memory: 16000
+  - name: cloud5
+    region: cloud
+    cost: 0.00003
+    policy: "cloud"
+    speedup: 1.2
+    memory: 16000
+  - name: cloud6
+    region: cloud
+    cost: 0.00005
+    policy: "cloud"
+    speedup: 1.2
+    memory: 24000
+  - name: cloud7
+    region: cloud
+    cost: 0.00007
+    policy: "cloud"
+    speedup: 1.4
+    memory: 24000
+  - name: cloud8
+    region: cloud
+    cost: 0.0001
+    policy: "cloud"
+    speedup: 1.4
+    memory: 32000
+  - name: lb1
+    region: cloud
+    memory: 0
+    policy: random-lb
+functions:
+  - name: f1
+    memory: 512
+    duration_mean: 0.4
+    duration_scv: 1.0
+    init_mean: 0.5
+  - name: f2
+    memory: 512
+    duration_mean: 0.2
+    duration_scv: 1.0
+    init_mean: 0.25
+  - name: f3
+    memory: 128
+    duration_mean: 0.3
+    duration_scv: 1.0
+    init_mean: 0.6
+  - name: f4
+    memory: 1024
+    duration_mean: 0.25
+    duration_scv: 1.0
+    init_mean: 0.25
+  - name: f5
+    memory: 256
+    duration_mean: 0.45
+    duration_scv: 1.0
+    init_mean: 0.5
+arrivals:
+  - node: lb1
+    function: f1
+    rate: 1
+  - node: lb1
+    function: f2
+    rate: 10
+  - node: lb1
+    function: f3
+    rate: 15
+  - node: lb1
+    function: f4
+    rate: 1
+  - node: lb1
+    function: f5
+    rate: 3
+    
+
