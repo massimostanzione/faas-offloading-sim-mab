@@ -74,20 +74,20 @@ class MABAgent(ABC):
                 file.write("[\n")
                 self.first_call = False
             data = {}
-            data["Time"] = self.simulation.t
-            data["Policy"] = self.curr_lb_policy.replace("-lb", "")
-            data["ServerLoads"] = self._get_server_loads()
-            data["ServerLoadsCum"] = self._get_server_loads_cum()
-            data["DroppedReqs"] = self._get_dropped_reqs()
+            data["time"] = self.simulation.t
+            data["policy"] = self.curr_lb_policy
+            data["server_loads"] = self._get_server_loads()
+            data["server_loads_cum"] = self._get_server_loads_cum()
+            data["dropped_reqs"] = self._get_dropped_reqs()
             total_resp_time_sum = sum(self.simulation.stats.resp_time_sum.values()) - sum(self.simulation.stats.ss_resp_time_sum.values())
             total_completions = sum(self.simulation.stats.completions.values()) - sum(self.simulation.stats.ss_completions.values())
             if total_completions == 0:
-                data["AvgRespTime"] = 0
+                data["avg_resp_time"] = 0
             else:
-                data["AvgRespTime"] = total_resp_time_sum / total_completions
-            data["Cost"] = self.simulation.stats.cost - self.simulation.stats.ss_cost
-            data["Utility"] = self.simulation.stats.utility - self.simulation.stats.ss_utility
-            data["Reward"] = reward
+                data["avg_resp_time"] = total_resp_time_sum / total_completions
+            data["cost"] = self.simulation.stats.cost - self.simulation.stats.ss_cost
+            data["utility"] = self.simulation.stats.utility - self.simulation.stats.ss_utility
+            data["reward"] = reward
             json.dump(data, file, indent=4)
             if end:
                 file.write("\n]")
