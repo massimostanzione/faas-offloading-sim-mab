@@ -317,3 +317,87 @@ class SlidingWindowUCB(MABAgent):
                 self.Q[policy_index] = 0
             else:
                 self.Q[policy_index] = (self.Q[policy_index] * self.N[policy_index] - reward) / self.N[policy_index]
+
+
+# UCB2 Strategy
+class UCB2(MABAgent):
+    def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config):
+        super().__init__(simulation, lb_policies, reward_config)
+        self.exploration_factor = exploration_factor
+        self.R = np.zeros(len(lb_policies))  # number of times each policy has been chosen
+        self.remaining_locked_plays = 0  # number of arm selection locked by the most promising arm selected in previous epochs
+        self.ucb2_alpha = 0.05  # TODO this is alpha - is it to be considered as the exploration factor?
+
+        print("[MAB]: init R -> ", self.R)
+
+    def __tau(self, r):
+        return math.ceil(math.pow(1 + self.ucb2_alpha, r))
+
+    def update_model(self, lb_policy: str, last_update=False):
+        self.curr_lb_policy = lb_policy
+        reward = self._compute_reward()
+        policy_index = self.lb_policies.index(lb_policy)
+        self.N[policy_index] += 1
+        self.Q[policy_index] += (reward - self.Q[policy_index]) / self.N[policy_index]
+
+        print("[MAB]: Q updated -> ", self.Q)
+        print("[MAB]: N updated -> ", self.N)
+        print("[MAB]: R updated -> ", self.R)
+
+        if not last_update:
+            self._print_stats(reward, end=False)
+        else:
+            self._print_stats(reward, end=True)
+        self.simulation.stats.do_snapshot()
+
+    def select_policy(self) -> str:
+        # init: in the first execution, play each arm once
+        for index, label in enumerate(self.lb_policies):
+            if self.N[index] == 0:
+                print("[MAB] INIT: selecting", label, "(", index, ") for the first time")
+                return self.lb_policies[index]
+
+        # if a specific arm was previously selected,
+        # continue executing it for the remaining f(\tau(R)) times (see below)
+        if self.remaining_locked_plays > 0:
+            self.remaining_locked_plays -= 1
+            print("[MAB] Policy selection locked by UCB2 on", self.curr_lb_policy, ",", self.remaining_locked_plays,
+                  "plays remaining.")
+            return None
+
+        total_count = sum(self.N)
+        ucb_values = [0.0 for _ in self.lb_policies]
+        for p in self.lb_policies:
+            policy_index = self.lb_policies.index(p)
+            if self.N[policy_index] > 0:
+                mean_reward = self.Q[policy_index]
+                tau_r = self.__tau(self.R[policy_index])
+                bonus = math.sqrt(
+                    (
+                            (1 + self.ucb2_alpha) * math.log(math.e * total_count / tau_r)
+                    )
+                    /
+                    (
+                            2 * tau_r
+                    )
+                )
+                ucb_values[policy_index] = mean_reward + bonus
+            else:
+                ucb_values[policy_index] = float('inf')  # assicura che ogni braccio venga selezionato almeno una volta
+
+        selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
+        selected_index = self.lb_policies.index(selected_policy)
+
+        # once the arm is selected, "lock" it for f(\tau(R)) subsequent plays:
+        tau_r_selected = self.__tau(self.R[selected_index])
+        tau_r1_selected = self.__tau(self.R[selected_index] + 1)
+        self.remaining_locked_plays = tau_r1_selected - tau_r_selected
+        self.remaining_locked_plays -= 1  # because decrementing is done while selecting the policy, i.e. here
+        self.R[selected_index] += 1  # increment the epoch counter
+        print("[MAB] Starting epoch no.", int(self.R[selected_index]), "for policy", selected_policy, "(",
+              selected_index,
+              ") - it will last for", self.remaining_locked_plays + 1, "subsequent plays.")
+
+        if self.curr_lb_policy == selected_policy:
+            return None
+        return selected_policy

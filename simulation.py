@@ -19,7 +19,7 @@ from infrastructure import *
 from statistics import Stats # type: ignore 
 from typing import List
 
-from mab import EpsilonGreedy, UCB, ResetUCB, SlidingWindowUCB
+from mab import EpsilonGreedy, UCB, ResetUCB, SlidingWindowUCB, UCB2
 
 @dataclass
 class Event:
@@ -248,6 +248,9 @@ class Simulation:
             exploration_factor = self.config.getfloat(conf.SEC_MAB, conf.MAB_UCB_EXPLORATION_FACTOR, fallback=0.05)
             window_size = self.config.getint(conf.SEC_MAB, conf.MAB_SWUCB_WINDOW_SIZE, fallback=10)
             return SlidingWindowUCB(self, lb_policies, exploration_factor, window_size, reward_config)
+        elif strategy == "UCB2":
+            exploration_factor = self.config.getfloat(conf.SEC_MAB, conf.MAB_UCB_EXPLORATION_FACTOR, fallback=0.05)
+            return UCB2(self, lb_policies, exploration_factor, reward_config)
         else:
             print("Unknown MAB strategy\n")
             exit(1)
