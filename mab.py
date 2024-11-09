@@ -401,3 +401,53 @@ class UCB2(MABAgent):
         if self.curr_lb_policy == selected_policy:
             return None
         return selected_policy
+
+# UCB-tuned Strategy
+class UCBTuned(MABAgent):
+    def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config):
+        super().__init__(simulation, lb_policies, reward_config)
+        self.exploration_factor = exploration_factor
+
+    def __variance(self, index):
+        s=self.N[index]
+        t = sum(self.N)
+        variance=1 #todo
+        return variance+math.sqrt((2*math.log(t)) / s)
+
+    def update_model(self, lb_policy: str, last_update=False):
+        self.curr_lb_policy = lb_policy
+        reward = self._compute_reward()
+        policy_index = self.lb_policies.index(lb_policy)
+        self.N[policy_index] += 1
+        self.Q[policy_index] += (reward - self.Q[policy_index]) / self.N[policy_index]
+        print("[MAB]: Q updated -> ", self.Q)
+        print("[MAB]: N updated -> ", self.N)
+        if not last_update:
+            self._print_stats(reward, end=False)
+        else:
+            self._print_stats(reward, end=True)
+        self.simulation.stats.do_snapshot()
+
+    def select_policy(self) -> str:
+        total_count = sum(self.N)
+        ucb_values = [0.0 for _ in self.lb_policies]
+        for p in self.lb_policies:
+            policy_index = self.lb_policies.index(p)
+            if self.N[policy_index] > 0:
+                mean_reward = self.Q[policy_index]
+
+                # TODO what to do with the exploration factor?
+                bonus = (self.exploration_factor *
+                         math.sqrt(
+                             (math.log(total_count)/ self.N[policy_index])
+                             *
+                             min(0.25, self.__variance(policy_index))
+                            )
+                         )
+                ucb_values[policy_index] = mean_reward + bonus
+            else:
+                ucb_values[policy_index] = float('inf')  # assicura che ogni braccio venga selezionato almeno una volta
+        selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
+        if self.curr_lb_policy == selected_policy:
+            return None
+        return selected_policy
