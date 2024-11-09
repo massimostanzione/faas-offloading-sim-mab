@@ -388,7 +388,14 @@ class UCB2(MABAgent):
         # once the arm is selected, "lock" it for f(\tau(R)) subsequent plays:
         tau_r_selected = self.__tau(self.R[selected_index])
         tau_r1_selected = self.__tau(self.R[selected_index] + 1)
-        self.remaining_locked_plays = tau_r1_selected - tau_r_selected
+
+        if tau_r1_selected - tau_r_selected < 0:
+            print("[MAB] ERROR: negative remaining_locked_plays =", self.remaining_locked_plays)
+            exit(1)
+
+        # \tau differences could be zero, set a minimum of 1 execution
+        self.remaining_locked_plays = max(1, tau_r1_selected - tau_r_selected)
+
         self.remaining_locked_plays -= 1  # because decrementing is done while selecting the policy, i.e. here
         self.R[selected_index] += 1  # increment the epoch counter
         print("[MAB] Starting epoch no.", int(self.R[selected_index]), "for policy", selected_policy, "(",
