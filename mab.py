@@ -352,6 +352,7 @@ class UCB2(MABAgent):
 
     def select_policy(self) -> str:
         # init: in the first execution, play each arm once
+        #       without any further computation
         for index, label in enumerate(self.lb_policies):
             if self.N[index] == 0:
                 print("[MAB] INIT: selecting", label, "(", index, ") for the first time")
@@ -369,22 +370,18 @@ class UCB2(MABAgent):
         ucb_values = [0.0 for _ in self.lb_policies]
         for p in self.lb_policies:
             policy_index = self.lb_policies.index(p)
-            if self.N[policy_index] > 0:
-                mean_reward = self.Q[policy_index]
-                tau_r = self.__tau(self.R[policy_index])
-                bonus = math.sqrt(
-                    (
-                            (1 + self.ucb2_alpha) * math.log(math.e * total_count / tau_r)
-                    )
-                    /
-                    (
-                            2 * tau_r
-                    )
+            mean_reward = self.Q[policy_index]
+            tau_r = self.__tau(self.R[policy_index])
+            bonus = math.sqrt(
+                (
+                        (1 + self.ucb2_alpha) * math.log(math.e * total_count / tau_r)
                 )
-                ucb_values[policy_index] = mean_reward + bonus
-            else:
-                ucb_values[policy_index] = float('inf')  # assicura che ogni braccio venga selezionato almeno una volta
-
+                /
+                (
+                        2 * tau_r
+                )
+            )
+            ucb_values[policy_index] = mean_reward + bonus
         selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
         selected_index = self.lb_policies.index(selected_policy)
 
