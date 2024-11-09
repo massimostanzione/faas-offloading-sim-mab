@@ -407,21 +407,25 @@ class UCBTuned(MABAgent):
     def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config):
         super().__init__(simulation, lb_policies, reward_config)
         self.exploration_factor = exploration_factor
+        self.M2 = np.zeros(len(lb_policies))    # sum of squared deviations, for variance computation
 
-    def __variance(self, index):
-        s=self.N[index]
+    def __compute_v(self, index: int):
+        s = self.N[index]
         t = sum(self.N)
-        variance=1 #todo
-        return variance+math.sqrt((2*math.log(t)) / s)
+        variance = self.M2[index] / self.N[index]
+        return variance + math.sqrt((2 * math.log(t)) / s)
 
     def update_model(self, lb_policy: str, last_update=False):
         self.curr_lb_policy = lb_policy
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
         self.N[policy_index] += 1
-        self.Q[policy_index] += (reward - self.Q[policy_index]) / self.N[policy_index]
+        delta = reward - self.Q[policy_index]                               # Q_(n-1)
+        self.Q[policy_index] += delta / self.N[policy_index]
+        self.M2[policy_index] += delta * (reward - self.Q[policy_index])    # Q_n
         print("[MAB]: Q updated -> ", self.Q)
         print("[MAB]: N updated -> ", self.N)
+        print("[MAB]: M2 updated -> ", self.M2)
         if not last_update:
             self._print_stats(reward, end=False)
         else:
@@ -435,14 +439,16 @@ class UCBTuned(MABAgent):
             policy_index = self.lb_policies.index(p)
             if self.N[policy_index] > 0:
                 mean_reward = self.Q[policy_index]
+                v = self.__compute_v(policy_index)
 
                 # TODO what to do with the exploration factor?
+                # is it to be considered as this (input) or as the sqrt(log()) factor into v?
                 bonus = (self.exploration_factor *
                          math.sqrt(
-                             (math.log(total_count)/ self.N[policy_index])
+                             (math.log(total_count) / self.N[policy_index])
                              *
-                             min(0.25, self.__variance(policy_index))
-                            )
+                             min(0.25, v)
+                             )
                          )
                 ucb_values[policy_index] = mean_reward + bonus
             else:
