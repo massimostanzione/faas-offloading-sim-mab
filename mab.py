@@ -6,6 +6,8 @@ import math
 import json
 import os
 
+import scipy.special
+
 MAX_COST = 5
 MAX_UTILITY = 100000
 
@@ -455,6 +457,72 @@ class UCBTuned(MABAgent):
                              )
                          )
                 ucb_values[policy_index] = mean_reward + bonus
+            else:
+                ucb_values[policy_index] = float('inf')  # assicura che ogni braccio venga selezionato almeno una volta
+        selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
+        if self.curr_lb_policy == selected_policy:
+            return None
+        return selected_policy
+
+
+# KL-UCB Strategy
+class KLUCB(MABAgent):
+    def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config):
+        super().__init__(simulation, lb_policies, reward_config)
+        self.exploration_factor = exploration_factor
+        self.KL=np.zeros(len(lb_policies))  # Kullback-Leibler values
+
+    def __kl(self, p, q):
+        #return scipy.special.kl_div(p,q)
+        # TODO shift the values as to be normalized into the [0, 1] interval
+        if p == q:
+            return 0.0
+        elif q == 0 or q == 1:
+            return np.inf
+        else:
+            print("p =", p, ", q =",q)
+            return (p*math.log(p/q))+((1-p)*math.log((1-p)/(1-q)))
+
+    def __q(self, index, c):
+        t=sum(self.N) # TODO a funzione ereditata?
+        upper_limit = 1.0
+        lower_limit = self.Q[index]
+        epsilon = 1e-6  # tolerance
+        target = (np.log(t) + c * np.log(np.log(t))) / self.N[index]
+
+        # find the q value via binary searhc
+        while upper_limit - lower_limit > epsilon:
+            q = (upper_limit + lower_limit) / 2
+            if self.__kl(self.Q[index], q) <= target:
+                lower_limit = q
+            else:
+                upper_limit = q
+        return (upper_limit + lower_limit) / 2
+
+    def update_model(self, lb_policy: str, last_update=False):
+        self.curr_lb_policy = lb_policy
+        reward = self._compute_reward()
+        policy_index = self.lb_policies.index(lb_policy)
+        self.N[policy_index] += 1
+        self.Q[policy_index] += (reward - self.Q[policy_index]) / self.N[policy_index]
+        print("[MAB]: Q updated -> ", self.Q)
+        print("[MAB]: N updated -> ", self.N)
+        if not last_update:
+            self._print_stats(reward, end=False)
+        else:
+            self._print_stats(reward, end=True)
+        self.simulation.stats.do_snapshot()
+
+    def select_policy(self) -> str:
+        total_count = sum(self.N)
+        ucb_values = [0.0 for _ in self.lb_policies]
+        for p in self.lb_policies:
+            policy_index = self.lb_policies.index(p)
+            if self.N[policy_index] > 0:
+                #mean_reward = self.Q[policy_index]
+                #bonus = self.exploration_factor * math.sqrt((2 * math.log(total_count)) / self.N[policy_index])
+                #todo c come parametro, e magari di classe invece di passato qui
+                ucb_values[policy_index] = self.__q(policy_index, 1.0)#mean_reward + bonus
             else:
                 ucb_values[policy_index] = float('inf')  # assicura che ogni braccio venga selezionato almeno una volta
         selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
