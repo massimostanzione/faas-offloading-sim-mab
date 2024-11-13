@@ -323,17 +323,17 @@ class SlidingWindowUCB(MABAgent):
 
 # UCB2 Strategy
 class UCB2(MABAgent):
-    def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config):
+    def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config, alpha: float):
         super().__init__(simulation, lb_policies, reward_config)
         self.exploration_factor = exploration_factor
+        self.alpha = alpha
         self.R = np.zeros(len(lb_policies))  # number of times each policy has been chosen
         self.remaining_locked_plays = 0  # number of arm selection locked by the most promising arm selected in previous epochs
-        self.ucb2_alpha = 0.05  # TODO this is alpha - is it to be considered as the exploration factor?
 
         print("[MAB]: init R -> ", self.R)
 
     def __tau(self, r):
-        return math.ceil(math.pow(1 + self.ucb2_alpha, r))
+        return math.ceil(math.pow(1 + self.alpha, r))
 
     def update_model(self, lb_policy: str, last_update=False):
         self.curr_lb_policy = lb_policy
@@ -374,15 +374,17 @@ class UCB2(MABAgent):
             policy_index = self.lb_policies.index(p)
             mean_reward = self.Q[policy_index]
             tau_r = self.__tau(self.R[policy_index])
-            bonus = math.sqrt(
-                (
-                        (1 + self.ucb2_alpha) * math.log(math.e * total_count / tau_r)
-                )
-                /
-                (
-                        2 * tau_r
-                )
-            )
+            bonus = (self.exploration_factor *
+                     math.sqrt(
+                         (
+                                 (1 + self.alpha) * math.log(math.e * total_count / tau_r)
+                         )
+                         /
+                         (
+                                 2 * tau_r
+                         )
+                     )
+                     )
             ucb_values[policy_index] = mean_reward + bonus
         selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
         selected_index = self.lb_policies.index(selected_policy)
@@ -447,8 +449,6 @@ class UCBTuned(MABAgent):
                 mean_reward = self.Q[policy_index]
                 v = self.__compute_v(policy_index)
 
-                # TODO what to do with the exploration factor?
-                # is it to be considered as this (input) or as the sqrt(log()) factor into v?
                 bonus = (self.exploration_factor *
                          math.sqrt(
                              (math.log(total_count) / self.N[policy_index])
@@ -467,9 +467,10 @@ class UCBTuned(MABAgent):
 
 # KL-UCB Strategy
 class KLUCB(MABAgent):
-    def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config):
+    def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config, c: float):
         super().__init__(simulation, lb_policies, reward_config)
         self.exploration_factor = exploration_factor
+        self.c = c                          # KL constant
         self.KL=np.zeros(len(lb_policies))  # Kullback-Leibler values
 
     def __kl(self, p, q):
@@ -504,7 +505,7 @@ class KLUCB(MABAgent):
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
         self.N[policy_index] += 1
-        self.Q[policy_index] += (reward - self.Q[policy_index]) / self.N[policy_index]
+        self.Q[policy_index] += self.exploration_factor * (reward - self.Q[policy_index]) / self.N[policy_index]
         print("[MAB]: Q updated -> ", self.Q)
         print("[MAB]: N updated -> ", self.N)
         if not last_update:
@@ -519,10 +520,7 @@ class KLUCB(MABAgent):
         for p in self.lb_policies:
             policy_index = self.lb_policies.index(p)
             if self.N[policy_index] > 0:
-                #mean_reward = self.Q[policy_index]
-                #bonus = self.exploration_factor * math.sqrt((2 * math.log(total_count)) / self.N[policy_index])
-                #todo c come parametro, e magari di classe invece di passato qui
-                ucb_values[policy_index] = self.__q(policy_index, 1.0)#mean_reward + bonus
+                ucb_values[policy_index] = self.__q(policy_index, self.c)#mean_reward + bonus
             else:
                 ucb_values[policy_index] = float('inf')  # assicura che ogni braccio venga selezionato almeno una volta
         selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]

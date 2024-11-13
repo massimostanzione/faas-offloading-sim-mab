@@ -250,13 +250,15 @@ class Simulation:
             return SlidingWindowUCB(self, lb_policies, exploration_factor, window_size, reward_config)
         elif strategy == "UCB2":
             exploration_factor = self.config.getfloat(conf.SEC_MAB, conf.MAB_UCB_EXPLORATION_FACTOR, fallback=0.05)
-            return UCB2(self, lb_policies, exploration_factor, reward_config)
+            alpha = self.config.getfloat(conf.SEC_MAB, conf.MAB_UCB2_ALPHA, fallback=1.0)
+            return UCB2(self, lb_policies, exploration_factor, reward_config, alpha)
         elif strategy == "UCBTuned":
             exploration_factor = self.config.getfloat(conf.SEC_MAB, conf.MAB_UCB_EXPLORATION_FACTOR, fallback=0.05)
             return UCBTuned(self, lb_policies, exploration_factor, reward_config)
         elif strategy == "KL-UCB":
             exploration_factor = self.config.getfloat(conf.SEC_MAB, conf.MAB_UCB_EXPLORATION_FACTOR, fallback=0.05)
-            return KLUCB(self, lb_policies, exploration_factor, reward_config)
+            c = self.config.getfloat(conf.SEC_MAB, conf.MAB_KL_UCB_C, fallback=1.0)
+            return KLUCB(self, lb_policies, exploration_factor, reward_config, c)
         else:
             print("Unknown MAB strategy\n")
             exit(1)
