@@ -10,6 +10,7 @@ import scipy.special
 
 MAX_COST = 5
 MAX_UTILITY = 100000
+MAX_RT = 1
 
 # Abstract MAB agent
 class MABAgent(ABC):
@@ -56,7 +57,7 @@ class MABAgent(ABC):
         if total_completions == 0:
             return 0
         avg_rt = total_resp_time_sum / total_completions
-        return -avg_rt
+        return -(avg_rt/MAX_RT)
 
     def _compute_cost(self):
         curr_cost = self.simulation.stats.cost - self.simulation.stats.ss_cost
@@ -481,20 +482,21 @@ class KLUCB(MABAgent):
         elif q == 0 or q == 1:
             return np.inf
         else:
-            print("p =", p, ", q =",q)
+            print("p =", p, ", q =", q)
             return (p*math.log(p/q))+((1-p)*math.log((1-p)/(1-q)))
 
     def __q(self, index, c):
         t=sum(self.N) # TODO a funzione ereditata?
         upper_limit = 1.0
-        lower_limit = self.Q[index]
+        lower_limit = self.Q[index]+1
+        print("lower", lower_limit)
         epsilon = 1e-6  # tolerance
         target = (np.log(t) + c * np.log(np.log(t))) / self.N[index]
 
         # find the q value via binary searhc
         while upper_limit - lower_limit > epsilon:
             q = (upper_limit + lower_limit) / 2
-            if self.__kl(self.Q[index], q) <= target:
+            if self.__kl(self.Q[index]+1, q) <= target:
                 lower_limit = q
             else:
                 upper_limit = q
