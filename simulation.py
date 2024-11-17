@@ -90,6 +90,7 @@ class RewardConfig:
     beta: float
     gamma: float
     delta: float
+    zeta: float
 
 
 OFFLOADING_OVERHEAD = 0.005
@@ -233,7 +234,8 @@ class Simulation:
             alpha=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_ALPHA, fallback=0.0), 
             beta=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_BETA, fallback=0.0), 
             gamma=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_GAMMA, fallback=0.0), 
-            delta=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_DELTA, fallback=0.0))
+            delta=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_DELTA, fallback=0.0),
+            zeta=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_ZETA, fallback=0.0))
         if strategy == "Epsilon-Greedy":
             epsilon = self.config.getfloat(conf.SEC_MAB, conf.MAB_EPSILON, fallback=0.1)
             return EpsilonGreedy(self, lb_policies, epsilon, reward_config)
@@ -644,4 +646,4 @@ class Simulation:
         self.mab_agent.BETA  = 1  # response time
         self.mab_agent.GAMMA = 0  # cost
         self.mab_agent.DELTA = 0  # utility
-        
+        self.mab_agent.ZETA  = 0  # response time violations

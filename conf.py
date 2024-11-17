@@ -51,6 +51,7 @@ MAB_REWARD_ALPHA = "mab-reward-alpha"
 MAB_REWARD_BETA = "mab-reward-beta"
 MAB_REWARD_GAMMA = "mab-reward-gamma"
 MAB_REWARD_DELTA = "mab-reward-delta"
+MAB_REWARD_ZETA = "mab-reward-zeta"
 
 
 import configparser

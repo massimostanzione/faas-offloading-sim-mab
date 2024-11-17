@@ -13,7 +13,7 @@ MAX_LOAD_IMBALANCE = 3  # as coefficient of variation (D^2/E), UB empirically de
 MAX_RT = 1              # max avg resp time, already normalized but can be tuned
 MAX_COST = 5
 MAX_UTILITY = 100000
-MAX_RT = 1
+MAX_VIOLATIONS = 10000  # max RT violations, UB empirically determined
 
 # Abstract MAB agent
 class MABAgent(ABC):
@@ -28,6 +28,7 @@ class MABAgent(ABC):
         self.BETA  = reward_config.beta     # coefficient for response time
         self.GAMMA = reward_config.gamma    # coefficient for cost
         self.DELTA = reward_config.delta    # coefficient for utility
+        self.ZETA = reward_config.zeta      # coefficient for response time violations
         print("[MAB]: init Q -> ", self.Q)
         print("[MAB]: init N -> ", self.N)
     
@@ -44,6 +45,8 @@ class MABAgent(ABC):
             + self.BETA*self._compute_response_time() \
             + self.GAMMA*self._compute_cost() \
             + self.DELTA*self._compute_utility()
+            + self.DELTA*self._compute_utility() \
+            + self.ZETA*self._compute_rt_violations()
 
     def _compute_load_imbalance(self):
         server_loads = self._get_server_loads()
@@ -77,6 +80,13 @@ class MABAgent(ABC):
         if curr_utility/MAX_UTILITY>1:
             print("[MAB] utility out of [0, 1] bounds! ->", curr_utility/MAX_UTILITY)
         return -(1 - (curr_utility/MAX_UTILITY))
+
+    def _compute_rt_violations(self):
+        # TODO better tunable?
+        violations = sum(self.simulation.stats.violations.values()) - sum(self.simulation.stats.ss_violations.values())
+        if violations/MAX_VIOLATIONS>1:
+            print("[MAB] violations out of [0, 1] bounds! ->", violations/MAX_VIOLATIONS)
+        return -(violations/MAX_VIOLATIONS)
 
     def _print_stats(self, reward, end):
         file_name = "mab_stats.json"
