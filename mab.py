@@ -8,6 +8,9 @@ import os
 
 import scipy.special
 
+# Upper bounds for the addends of the reward function
+MAX_LOAD_IMBALANCE = 3  # as coefficient of variation (D^2/E), UB empirically determined
+MAX_RT = 1              # max avg resp time, already normalized but can be tuned
 MAX_COST = 5
 MAX_UTILITY = 100000
 MAX_RT = 1
@@ -49,7 +52,9 @@ class MABAgent(ABC):
             return 0
         std_deviation = np.std(server_loads)
         imbalance_percentage = std_deviation / mean_load
-        return -imbalance_percentage
+        if imbalance_percentage/MAX_LOAD_IMBALANCE>1:
+            print("[MAB] imbalance percentage out of [0, 1] bounds! ->", imbalance_percentage)
+        return -(imbalance_percentage / MAX_LOAD_IMBALANCE)
 
     def _compute_response_time(self):
         total_resp_time_sum = sum(self.simulation.stats.resp_time_sum.values()) - sum(self.simulation.stats.ss_resp_time_sum.values())
@@ -57,14 +62,20 @@ class MABAgent(ABC):
         if total_completions == 0:
             return 0
         avg_rt = total_resp_time_sum / total_completions
+        if avg_rt/MAX_RT>1:
+            print("[MAB] average RT out of [0, 1] bounds! ->", avg_rt/MAX_RT)
         return -(avg_rt/MAX_RT)
 
     def _compute_cost(self):
         curr_cost = self.simulation.stats.cost - self.simulation.stats.ss_cost
+        if curr_cost/MAX_COST>1:
+            print("[MAB] cost out of [0, 1] bounds! ->", curr_cost/MAX_COST)
         return -(curr_cost/MAX_COST)
 
     def _compute_utility(self):
         curr_utility = self.simulation.stats.utility - self.simulation.stats.ss_utility
+        if curr_utility/MAX_UTILITY>1:
+            print("[MAB] utility out of [0, 1] bounds! ->", curr_utility/MAX_UTILITY)
         return -(1 - (curr_utility/MAX_UTILITY))
 
     def _print_stats(self, reward, end):
