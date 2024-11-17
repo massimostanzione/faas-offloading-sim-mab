@@ -393,17 +393,8 @@ class UCB2(MABAgent):
             policy_index = self.lb_policies.index(p)
             mean_reward = self.Q[policy_index]
             tau_r = self.__tau(self.R[policy_index])
-            bonus = (self.exploration_factor *
-                     math.sqrt(
-                         (
-                                 (1 + self.alpha) * math.log(math.e * total_count / tau_r)
-                         )
-                         /
-                         (
-                                 2 * tau_r
-                         )
-                     )
-                     )
+            bonus = (self.exploration_factor * math.sqrt(
+                ((1 + self.alpha) * math.log(math.e * total_count / tau_r)) / (2 * tau_r)))
             ucb_values[policy_index] = mean_reward + bonus
         selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
         selected_index = self.lb_policies.index(selected_policy)
