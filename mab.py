@@ -6,8 +6,6 @@ import math
 import json
 import os
 
-import scipy.special
-
 # Upper bounds for the addends of the reward function
 MAX_LOAD_IMBALANCE = 3  # as coefficient of variation (D^2/E), UB empirically determined
 MAX_RT = 1              # max avg resp time, already normalized but can be tuned
@@ -44,7 +42,6 @@ class MABAgent(ABC):
         return self.ALPHA*self._compute_load_imbalance() \
             + self.BETA*self._compute_response_time() \
             + self.GAMMA*self._compute_cost() \
-            + self.DELTA*self._compute_utility()
             + self.DELTA*self._compute_utility() \
             + self.ZETA*self._compute_rt_violations()
 
@@ -442,7 +439,7 @@ class UCBTuned(MABAgent):
     def __compute_v(self, index: int):
         s = self.N[index]
         t = sum(self.N)
-        variance = self.M2[index] / self.N[index]
+        variance = self.M2[index] / s
         return variance + math.sqrt((2 * math.log(t)) / s)
 
     def update_model(self, lb_policy: str, last_update=False):
@@ -471,13 +468,8 @@ class UCBTuned(MABAgent):
                 mean_reward = self.Q[policy_index]
                 v = self.__compute_v(policy_index)
 
-                bonus = (self.exploration_factor *
-                         math.sqrt(
-                             (math.log(total_count) / self.N[policy_index])
-                             *
-                             min(0.25, v)
-                             )
-                         )
+                bonus = (self.exploration_factor * math.sqrt(
+                    (math.log(total_count) / self.N[policy_index]) * min(0.25, v)))
                 ucb_values[policy_index] = mean_reward + bonus
             else:
                 ucb_values[policy_index] = float('inf')  # assicura che ogni braccio venga selezionato almeno una volta
@@ -496,23 +488,18 @@ class KLUCB(MABAgent):
         self.KL=np.zeros(len(lb_policies))  # Kullback-Leibler values
 
     def __kl(self, p, q):
-        #return scipy.special.kl_div(p,q)
-        # TODO shift the values as to be normalized into the [0, 1] interval
         if p == q:
             return 0.0
         elif q == 0 or q == 1:
             return np.inf
-        else:
-            print("p =", p, ", q =", q)
-            return (p*math.log(p/q))+((1-p)*math.log((1-p)/(1-q)))
+        return (p*math.log(p/q))+((1-p)*math.log((1-p)/(1-q)))
 
-    def __q(self, index, c):
-        t=sum(self.N) # TODO a funzione ereditata?
+    def __q(self, index):
+        t=sum(self.N)
         upper_limit = 1.0
         lower_limit = self.Q[index]+1
-        print("lower", lower_limit)
         epsilon = 1e-6  # tolerance
-        target = (np.log(t) + c * np.log(np.log(t))) / self.N[index]
+        target = (np.log(t) + self.c * np.log(np.log(t))) / self.N[index]
 
         # find the q value via binary searhc
         while upper_limit - lower_limit > epsilon:
