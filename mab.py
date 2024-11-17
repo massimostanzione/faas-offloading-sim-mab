@@ -516,14 +516,22 @@ class KLUCB(MABAgent):
         self.simulation.stats.do_snapshot()
 
     def select_policy(self) -> str:
+        # init: in the first execution, play each arm once
+        #       without any further computation
+        #       Oss.: setting "inf" in the last loop for the initialization
+        #             does not prevent q computation for the default policy,
+        #             resulting in a "divide by zero" error.
+        for index, label in enumerate(self.lb_policies):
+            if self.N[index] == 0:
+                print("[MAB] INIT: selecting", label, "(", index, ") for the first time")
+                return self.lb_policies[index]
+
         total_count = sum(self.N)
         ucb_values = [0.0 for _ in self.lb_policies]
         for p in self.lb_policies:
             policy_index = self.lb_policies.index(p)
-            if self.N[policy_index] > 0:
-                ucb_values[policy_index] = self.__q(policy_index, self.c)#mean_reward + bonus
-            else:
-                ucb_values[policy_index] = float('inf')  # assicura che ogni braccio venga selezionato almeno una volta
+            # Oss.: here the exploration factor is not used
+            ucb_values[policy_index] = self.__q(policy_index)
         selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
         if self.curr_lb_policy == selected_policy:
             return None
