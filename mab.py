@@ -475,8 +475,8 @@ class KLUCB(MABAgent):
     def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config, c: float):
         super().__init__(simulation, lb_policies, reward_config)
         self.exploration_factor = exploration_factor
-        self.c = c                          # KL constant
-        self.KL=np.zeros(len(lb_policies))  # Kullback-Leibler values
+        self.c = c                              # KL constant
+        self.cumQ = np.zeros(len(lb_policies))  # Sum of rewards
 
     def __kl(self, p, q):
         if p == q:
@@ -487,15 +487,16 @@ class KLUCB(MABAgent):
 
     def __q(self, index):
         t=sum(self.N)
+        shifted_reward = self.Q[index] + 1  # in order to have the reward into [0, 1], as required by KL
         upper_limit = 1.0
-        lower_limit = self.Q[index]+1
+        lower_limit = shifted_reward
         epsilon = 1e-6  # tolerance
         target = (np.log(t) + self.c * np.log(np.log(t))) / self.N[index]
 
         # find the q value via binary searhc
         while upper_limit - lower_limit > epsilon:
             q = (upper_limit + lower_limit) / 2
-            if self.__kl(self.Q[index]+1, q) <= target:
+            if self.__kl(-(self.cumQ[index])/self.N[index], q) <= target:
                 lower_limit = q
             else:
                 upper_limit = q
@@ -506,9 +507,11 @@ class KLUCB(MABAgent):
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
         self.N[policy_index] += 1
-        self.Q[policy_index] += self.exploration_factor * (reward - self.Q[policy_index]) / self.N[policy_index]
+        self.Q[policy_index] += (reward - self.Q[policy_index]) / self.N[policy_index]
+        self.cumQ[policy_index]+=reward
         print("[MAB]: Q updated -> ", self.Q)
         print("[MAB]: N updated -> ", self.N)
+        print("[MAB]: cumQ updated -> ", self.cumQ)
         if not last_update:
             self._print_stats(reward, end=False)
         else:
@@ -530,8 +533,7 @@ class KLUCB(MABAgent):
         ucb_values = [0.0 for _ in self.lb_policies]
         for p in self.lb_policies:
             policy_index = self.lb_policies.index(p)
-            # Oss.: here the exploration factor is not used
-            ucb_values[policy_index] = self.__q(policy_index)
+            ucb_values[policy_index] = self.exploration_factor * self.__q(policy_index)
         selected_policy = self.lb_policies[ucb_values.index(max(ucb_values))]
         if self.curr_lb_policy == selected_policy:
             return None
