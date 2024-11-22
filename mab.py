@@ -11,7 +11,6 @@ MAX_LOAD_IMBALANCE = 3  # as coefficient of variation (D^2/E), UB empirically de
 MAX_RT = 1              # max avg resp time, already normalized but can be tuned
 MAX_COST = 5
 MAX_UTILITY = 100000
-MAX_VIOLATIONS = 10000  # max RT violations, UB empirically determined
 
 # Abstract MAB agent
 class MABAgent(ABC):
@@ -79,11 +78,15 @@ class MABAgent(ABC):
         return -(1 - (curr_utility/MAX_UTILITY))
 
     def _compute_rt_violations(self):
-        # TODO better tunable?
         violations = sum(self.simulation.stats.violations.values()) - sum(self.simulation.stats.ss_violations.values())
-        if violations/MAX_VIOLATIONS>1:
-            print("[MAB] violations out of [0, 1] bounds! ->", violations/MAX_VIOLATIONS)
-        return -(violations/MAX_VIOLATIONS)
+        completions = sum(self.simulation.stats.completions.values()) - sum(
+            self.simulation.stats.ss_completions.values())
+
+        violations_perc = violations / completions
+
+        if violations_perc > 1:
+            print("[MAB] violations out of [0, 1] bounds! ->", violations_perc)
+        return -violations_perc
 
     def _print_stats(self, reward, end):
         file_name = "mab_stats.json"
