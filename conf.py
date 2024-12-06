@@ -47,11 +47,21 @@ MAB_RUCB_INTERVAL = "mab-rucb-interval"
 MAB_SWUCB_WINDOW_SIZE = "mab-swucb-window-size"
 MAB_UCB2_ALPHA = "mab-ucb2-alpha"
 MAB_KL_UCB_C = "mab-kl-ucb-c"
+
+# stationary
 MAB_REWARD_ALPHA = "mab-reward-alpha"
 MAB_REWARD_BETA = "mab-reward-beta"
 MAB_REWARD_GAMMA = "mab-reward-gamma"
 MAB_REWARD_DELTA = "mab-reward-delta"
 MAB_REWARD_ZETA = "mab-reward-zeta"
+
+# non-stationary
+MAB_NON_STATIONARY_ENABLED = "mab-non-stationary-enabled"
+MAB_REWARD_ALPHA_POST = "mab-reward-alpha-post"
+MAB_REWARD_BETA_POST = "mab-reward-beta-post"
+MAB_REWARD_GAMMA_POST = "mab-reward-gamma-post"
+MAB_REWARD_DELTA_POST = "mab-reward-delta-post"
+MAB_REWARD_ZETA_POST = "mab-reward-zeta-post"
 
 
 import configparser

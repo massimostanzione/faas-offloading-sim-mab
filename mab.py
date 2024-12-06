@@ -26,6 +26,12 @@ class MABAgent(ABC):
         self.GAMMA = reward_config.gamma    # coefficient for cost
         self.DELTA = reward_config.delta    # coefficient for utility
         self.ZETA = reward_config.zeta      # coefficient for response time violations
+        # non-stationary
+        self.ALPHA_POST = reward_config.alpha_post    # coefficient for load imbalance
+        self.BETA_POST  = reward_config.beta_post     # coefficient for response time
+        self.GAMMA_POST = reward_config.gamma_post    # coefficient for cost
+        self.DELTA_POST = reward_config.delta_post    # coefficient for utility
+        self.ZETA_POST = reward_config.zeta_post      # coefficient for response time violations
         print("[MAB]: init Q -> ", self.Q)
         print("[MAB]: init N -> ", self.N)
     
@@ -90,6 +96,13 @@ class MABAgent(ABC):
 
     def _print_stats(self, reward, end):
         file_name = "mab_stats.json"
+    def _axis(self) -> str:
+        if self.ALPHA==1: return "load_imb"
+        if self.BETA==1: return "rt"
+        if self.GAMMA==1: return "cost"
+        if self.DELTA==1: return "utility"
+        if self.ZETA==1: return "violations"
+        return "NA"
         if self.first_call:
             if os.path.exists(file_name):
                 os.remove(file_name)

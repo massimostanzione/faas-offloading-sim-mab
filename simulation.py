@@ -92,6 +92,13 @@ class RewardConfig:
     delta: float
     zeta: float
 
+    # non-stationary context
+    alpha_post:float
+    beta_post:float
+    gamma_post:float
+    delta_post:float
+    zeta_post:float
+
 
 OFFLOADING_OVERHEAD = 0.005
 ARRIVAL_TRACE_PERIOD = 60.0
@@ -235,7 +242,15 @@ class Simulation:
             beta=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_BETA, fallback=0.0), 
             gamma=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_GAMMA, fallback=0.0), 
             delta=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_DELTA, fallback=0.0),
-            zeta=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_ZETA, fallback=0.0))
+            zeta=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_ZETA, fallback=0.0),
+
+            # non-stationary
+            alpha_post=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_ALPHA_POST, fallback=0.0),
+            beta_post=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_BETA_POST, fallback=0.0),
+            gamma_post=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_GAMMA_POST, fallback=0.0),
+            delta_post=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_DELTA_POST, fallback=0.0),
+            zeta_post=self.config.getfloat(conf.SEC_MAB, conf.MAB_REWARD_ZETA_POST, fallback=0.0)
+        )
         if strategy == "Epsilon-Greedy":
             epsilon = self.config.getfloat(conf.SEC_MAB, conf.MAB_EPSILON, fallback=0.1)
             return EpsilonGreedy(self, lb_policies, epsilon, reward_config)
@@ -339,7 +354,9 @@ class Simulation:
             self.current_lb_policy = lb_policy
             self.schedule(self.mab_update_interval, MABUpdate())
             # Non-stationary case
-            #self.schedule(3600, RewardUpdate())
+            non_stationary=self.config.getboolean(conf.SEC_SIM, conf.MAB_NON_STATIONARY_ENABLED, fallback=False)
+            if non_stationary:
+                self.schedule(3600, RewardUpdate())
 
         while len(self.events) > 0:
             t,e = heappop(self.events)
@@ -642,8 +659,8 @@ class Simulation:
                 self.node2policy[n] = self.new_policy(_lb_policy, n)
 
     def reward_update(self):
-        self.mab_agent.ALPHA = 0  # load imbalance
-        self.mab_agent.BETA  = 1  # response time
-        self.mab_agent.GAMMA = 0  # cost
-        self.mab_agent.DELTA = 0  # utility
-        self.mab_agent.ZETA  = 0  # response time violations
+        self.mab_agent.ALPHA = self.mab_agent.ALPHA_POST  # load imbalance
+        self.mab_agent.BETA  = self.mab_agent.BETA_POST  # response time
+        self.mab_agent.GAMMA = self.mab_agent.GAMMA_POST  # cost
+        self.mab_agent.DELTA = self.mab_agent.DELTA_POST  # utility
+        self.mab_agent.ZETA  = self.mab_agent.ZETA_POST  # response time violations
