@@ -11,9 +11,16 @@ from numpy.random import SeedSequence, default_rng
 from simulation import Simulation
 from infrastructure import *
 
+DEFAULT_CONFIG_FILE = "config.ini"
 
 def read_spec_file (spec_file_name, infra, config):
     peer_exposed_memory_fraction = config.getfloat(conf.SEC_SIM, conf.EDGE_EXPOSED_FRACTION, fallback=0.5)
+
+    # if sequential experiments are running,
+    # look for the spec file in the main directory
+    #if multipleExec:
+    if not __name__ == "__main__":
+        spec_file_name="../"+spec_file_name
 
     with open(spec_file_name, "r") as stream:
         spec = yaml.safe_load(stream)
@@ -120,7 +127,7 @@ def read_spec_file (spec_file_name, infra, config):
     return classes, functions, node2arrivals
 
 
-def init_simulation (config):
+def init_simulation(config):
     seed = config.getint(conf.SEC_SIM, conf.SEED, fallback=1)
     seed_sequence = SeedSequence(seed)
 
@@ -143,14 +150,12 @@ def init_simulation (config):
     return sim
 
 
-def main():
-    DEFAULT_CONFIG_FILE = "config.ini"
-    config_file = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_CONFIG_FILE
+def main(config_file):
     config = conf.parse_config_file(config_file)
     simulation = init_simulation(config)
-    final_stats = simulation.run()
-
+    simulation.run()
 
 
 if __name__ == "__main__":
-    main()
+    config_file= sys.argv[1] if len(sys.argv) > 1 else DEFAULT_CONFIG_FILE
+    main(config_file)
