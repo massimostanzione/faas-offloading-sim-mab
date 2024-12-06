@@ -348,6 +348,9 @@ class UCB2(MABAgent):
     def __init__(self, simulation, lb_policies: List[str], exploration_factor: float, reward_config, alpha: float):
         super().__init__(simulation, lb_policies, reward_config)
         self.exploration_factor = exploration_factor
+        if alpha<=0 or alpha>=1:
+            print("[ERROR] UCB2 \"alpha\" parameter must be into (0, 1),", alpha, "received instead.")
+            exit(1)
         self.alpha = alpha
         self.R = np.zeros(len(lb_policies))  # number of times each policy has been chosen
         self.remaining_locked_plays = 0  # number of arm selection locked by the most promising arm selected in previous epochs
