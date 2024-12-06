@@ -32,6 +32,15 @@ class MABAgent(ABC):
         self.GAMMA_POST = reward_config.gamma_post    # coefficient for cost
         self.DELTA_POST = reward_config.delta_post    # coefficient for utility
         self.ZETA_POST = reward_config.zeta_post      # coefficient for response time violations
+
+        if self.ALPHA + self.BETA + self.GAMMA + self.DELTA + self.ZETA != 1:
+            print("[ERROR] weights of the stationary reward function do not sum to 1, please check your config file.")
+            exit(1)
+
+        if self.ALPHA_POST + self.BETA_POST+ self.GAMMA_POST + self.DELTA_POST + self.ZETA_POST != 1:
+            print("[ERROR] weights of the non-stationary reward function do not sum to 1, please check your config file.")
+            exit(1)
+
         print("[MAB]: init Q -> ", self.Q)
         print("[MAB]: init N -> ", self.N)
     
@@ -94,8 +103,6 @@ class MABAgent(ABC):
             print("[MAB] violations out of [0, 1] bounds! ->", violations_perc)
         return -violations_perc
 
-    def _print_stats(self, reward, end):
-        file_name = "mab_stats.json"
     def _axis(self) -> str:
         if self.ALPHA==1: return "load_imb"
         if self.BETA==1: return "rt"
@@ -103,6 +110,9 @@ class MABAgent(ABC):
         if self.DELTA==1: return "utility"
         if self.ZETA==1: return "violations"
         return "NA"
+
+    def _print_stats(self, reward, mab_stats_file:TextIOWrapper, end):
+        file_name = mab_stats_file.name#["name"]
         if self.first_call:
             if os.path.exists(file_name):
                 os.remove(file_name)
