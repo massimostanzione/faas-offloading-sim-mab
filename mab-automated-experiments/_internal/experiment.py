@@ -51,23 +51,23 @@ def write_custom_configfile(expname: str, strategy: str, axis_pre: str, axis_pos
         outconfig.set(conf.SEC_MAB, param_name, str(params_values[i]))
 
     # stationary
-    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_ALPHA, str(1) if axis_pre == consts.RewardFnAxis.LOADIMB else str(0))
+    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_ALPHA, str(1) if axis_pre == consts.RewardFnAxis.LOADIMB.value else str(0))
     outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_BETA,
-                  str(1) if axis_pre == consts.RewardFnAxis.RESPONSETIME else str(0))
-    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_GAMMA, str(1) if axis_pre == consts.RewardFnAxis.COST else str(0))
-    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_DELTA, str(1) if axis_pre == consts.RewardFnAxis.UTILITY else str(0))
-    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_ZETA, str(1) if axis_pre == consts.RewardFnAxis.VIOLATIONS else str(0))
+                  str(1) if axis_pre == consts.RewardFnAxis.RESPONSETIME.value else str(0))
+    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_GAMMA, str(1) if axis_pre == consts.RewardFnAxis.COST.value else str(0))
+    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_DELTA, str(1) if axis_pre == consts.RewardFnAxis.UTILITY.value else str(0))
+    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_ZETA, str(1) if axis_pre == consts.RewardFnAxis.VIOLATIONS.value else str(0))
 
     # non-stationary
     outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_ALPHA_POST,
-                  str(1) if axis_post == consts.RewardFnAxis.LOADIMB else str(0))
+                  str(1) if axis_post == consts.RewardFnAxis.LOADIMB.value else str(0))
     outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_BETA_POST,
-                  str(1) if axis_post == consts.RewardFnAxis.RESPONSETIME else str(0))
-    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_GAMMA_POST, str(1) if axis_post == consts.RewardFnAxis.COST else str(0))
+                  str(1) if axis_post == consts.RewardFnAxis.RESPONSETIME.value else str(0))
+    outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_GAMMA_POST, str(1) if axis_post == consts.RewardFnAxis.COST.value else str(0))
     outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_DELTA_POST,
-                  str(1) if axis_post == consts.RewardFnAxis.UTILITY else str(0))
+                  str(1) if axis_post == consts.RewardFnAxis.UTILITY.value else str(0))
     outconfig.set(conf.SEC_MAB, conf.MAB_REWARD_ZETA_POST,
-                  str(1) if axis_post == consts.RewardFnAxis.VIOLATIONS else str(0))
+                  str(1) if axis_post == consts.RewardFnAxis.VIOLATIONS.value else str(0))
     config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", expname, "results", consts.CONFIG_FILE))
 
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
