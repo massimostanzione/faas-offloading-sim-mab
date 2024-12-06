@@ -26,7 +26,7 @@ class RewardFnAxis(Enum):
     RESPONSETIME = "rt"
     COST = "cost"
     UTILITY = "utility"
-    VIOLATIONS = "load_imb"
+    VIOLATIONS = "violations"
 
 
 PIPELINE_FILE = "pipeline.txt"
