@@ -16,7 +16,7 @@ import stateful
 from stateful import key_locator
 from arrivals import ArrivalProcess
 from infrastructure import *
-from statistics import Stats # type: ignore 
+from statistics import Stats # type: ignore
 from typing import List
 
 from mab import EpsilonGreedy, UCB, ResetUCB, SlidingWindowUCB, UCB2, UCBTuned, KLUCB
@@ -312,6 +312,7 @@ class Simulation:
         print(self.rate_update_interval)
         self.stats_print_interval = self.config.getfloat(conf.SEC_SIM, conf.STAT_PRINT_INTERVAL, fallback=-1)
         self.stats_file = sys.stdout
+        self.mab_stats_file = sys.stdout
 
         # Multi-Armed Bandit
         self.mab_update_interval = self.config.getfloat(conf.SEC_MAB, conf.MAB_UPDATE_INTERVAL, fallback=-1)
@@ -350,6 +351,9 @@ class Simulation:
             if len(stats_print_filename) > 0:
                 self.stats_file = open(stats_print_filename, "w")
         if self.mab_update_interval > 0.0:
+            mab_stats_print_filename = self.config.get(conf.SEC_SIM, conf.MAB_STAT_PRINT_FILE, fallback="")
+            if len(mab_stats_print_filename) > 0:
+                self.mab_stats_file = open(mab_stats_print_filename, "w")
             self.mab_agent = self.new_mab_agent()
             self.current_lb_policy = lb_policy
             self.schedule(self.mab_update_interval, MABUpdate())
@@ -646,9 +650,9 @@ class Simulation:
         # Invoco l'agente per aggiornare il modello 
         # Si occuperà lui stesso dell'aggiornamento del reward
         if last_update:
-            self.mab_agent.update_model(self.current_lb_policy, last_update=True)
+            self.mab_agent.update_model(self.current_lb_policy, self.mab_stats_file,last_update=True)
         else:
-            self.mab_agent.update_model(self.current_lb_policy, last_update=False)        
+            self.mab_agent.update_model(self.current_lb_policy, self.mab_stats_file,last_update=False)
         # Richiedo la nuova politica di load balancing all'agente
         # La politica scelta verrà applicata a tutti i load balancer presenti
         selected_policy = self.mab_agent.select_policy()

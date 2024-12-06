@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List
+from io import TextIOWrapper
+from typing import List, Iterable
 from collections import deque
 import numpy as np
 import math
@@ -45,7 +46,7 @@ class MABAgent(ABC):
         print("[MAB]: init N -> ", self.N)
     
     @abstractmethod
-    def update_model(self, lb_policy: str, last_update=False):
+    def update_model(self, lb_policy: str, mab_stats_file:str, last_update=False):
         pass
 
     @abstractmethod
@@ -191,7 +192,7 @@ class EpsilonGreedy(MABAgent):
         self.epsilon = epsilon
         self.rng = self.simulation.mab_agent_rng
 
-    def update_model(self, lb_policy: str, last_update=False):
+    def update_model(self, lb_policy: str, mab_stats_file:str, last_update=False):
         self.curr_lb_policy = lb_policy
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
@@ -200,9 +201,9 @@ class EpsilonGreedy(MABAgent):
         print("[MAB]: Q updated -> ", self.Q)
         print("[MAB]: N updated -> ", self.N)
         if not last_update:
-            self._print_stats(reward, end=False)
+            self._print_stats(reward, mab_stats_file, end=False)
         else:
-            self._print_stats(reward, end=True)
+            self._print_stats(reward, mab_stats_file, end=True)
         self.simulation.stats.do_snapshot()
     
     def select_policy(self) -> str:
@@ -228,7 +229,7 @@ class UCB(MABAgent):
         super().__init__(simulation, lb_policies, reward_config)
         self.exploration_factor = exploration_factor
     
-    def update_model(self, lb_policy: str, last_update=False):
+    def update_model(self, lb_policy: str, mab_stats_file:str, last_update=False):
         self.curr_lb_policy = lb_policy
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
@@ -237,9 +238,9 @@ class UCB(MABAgent):
         print("[MAB]: Q updated -> ", self.Q)
         print("[MAB]: N updated -> ", self.N)
         if not last_update:
-            self._print_stats(reward, end=False)
+            self._print_stats(reward, mab_stats_file, end=False)
         else:
-            self._print_stats(reward, end=True)
+            self._print_stats(reward, mab_stats_file, end=True)
         self.simulation.stats.do_snapshot()
     
     def select_policy(self) -> str:
@@ -266,7 +267,7 @@ class ResetUCB(MABAgent):
         self.reset_interval = reset_interval
         self.reset_counter = 0
     
-    def update_model(self, lb_policy: str, last_update=False):
+    def update_model(self, lb_policy: str, mab_stats_file:str, last_update=False):
         self.curr_lb_policy = lb_policy
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
@@ -281,9 +282,9 @@ class ResetUCB(MABAgent):
         print("[MAB]: Q updated -> ", self.Q)
         print("[MAB]: N updated -> ", self.N)
         if not last_update:
-            self._print_stats(reward, end=False)
+            self._print_stats(reward, mab_stats_file, end=False)
         else:
-            self._print_stats(reward, end=True)
+            self._print_stats(reward, mab_stats_file, end=True)
         self.simulation.stats.do_snapshot()
     
     def select_policy(self) -> str:
@@ -315,7 +316,7 @@ class SlidingWindowUCB(MABAgent):
         self.window_size = window_size
         self.history = deque(maxlen=window_size) # Finestra scorrevole
     
-    def update_model(self, lb_policy: str, last_update=False):
+    def update_model(self, lb_policy: str, mab_stats_file:str, last_update=False):
         self.curr_lb_policy = lb_policy
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
@@ -332,9 +333,9 @@ class SlidingWindowUCB(MABAgent):
         print("[MAB]: Q updated -> ", self.Q)
         print("[MAB]: N updated -> ", self.N)
         if not last_update:
-            self._print_stats(reward, end=False)
+            self._print_stats(reward, mab_stats_file, end=False)
         else:
-            self._print_stats(reward, end=True)
+            self._print_stats(reward, mab_stats_file, end=True)
         self.simulation.stats.do_snapshot()
     
     def select_policy(self) -> str:
@@ -383,7 +384,7 @@ class UCB2(MABAgent):
     def __tau(self, r):
         return math.ceil(math.pow(1 + self.alpha, r))
 
-    def update_model(self, lb_policy: str, last_update=False):
+    def update_model(self, lb_policy: str, mab_stats_file:str, last_update=False):
         self.curr_lb_policy = lb_policy
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
@@ -395,9 +396,9 @@ class UCB2(MABAgent):
         print("[MAB]: R updated -> ", self.R)
 
         if not last_update:
-            self._print_stats(reward, end=False)
+            self._print_stats(reward, mab_stats_file,False)
         else:
-            self._print_stats(reward, end=True)
+            self._print_stats(reward, mab_stats_file,True)
         self.simulation.stats.do_snapshot()
 
     def select_policy(self) -> str:
@@ -462,7 +463,7 @@ class UCBTuned(MABAgent):
         variance = self.M2[index] / s
         return variance + math.sqrt((2 * math.log(t)) / s)
 
-    def update_model(self, lb_policy: str, last_update=False):
+    def update_model(self, lb_policy: str, mab_stats_file:str, last_update=False):
         self.curr_lb_policy = lb_policy
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
@@ -474,9 +475,9 @@ class UCBTuned(MABAgent):
         print("[MAB]: N updated -> ", self.N)
         print("[MAB]: M2 updated -> ", self.M2)
         if not last_update:
-            self._print_stats(reward, end=False)
+            self._print_stats(reward, mab_stats_file, False)
         else:
-            self._print_stats(reward, end=True)
+            self._print_stats(reward, mab_stats_file, True)
         self.simulation.stats.do_snapshot()
 
     def select_policy(self) -> str:
@@ -531,7 +532,7 @@ class KLUCB(MABAgent):
                 upper_limit = q
         return (upper_limit + lower_limit) / 2
 
-    def update_model(self, lb_policy: str, last_update=False):
+    def update_model(self, lb_policy: str, mab_stats_file:str, last_update=False):
         self.curr_lb_policy = lb_policy
         reward = self._compute_reward()
         policy_index = self.lb_policies.index(lb_policy)
@@ -542,9 +543,9 @@ class KLUCB(MABAgent):
         print("[MAB]: N updated -> ", self.N)
         print("[MAB]: cumQ updated -> ", self.cumQ)
         if not last_update:
-            self._print_stats(reward, end=False)
+            self._print_stats(reward, mab_stats_file, end=False)
         else:
-            self._print_stats(reward, end=True)
+            self._print_stats(reward, mab_stats_file, end=True)
         self.simulation.stats.do_snapshot()
 
     def select_policy(self) -> str:
