@@ -6,4 +6,4 @@ In order to create and run an experiment:
 1. clone the `_archetype` directory
 2. fill the `expconf.ini` file with the desired parameters, according to the instructions contained therein
 3. add the experiment name in a new line of `pipeline.txt`
-4. run `python3.8 run.py`
+4. run `python3 run.py`

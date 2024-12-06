@@ -43,7 +43,7 @@ if __name__ == "__main__":
                         print(f"Running experiment \"{name}\"")
                         print(f"with custom simulations")
                         print("--------------------------------------------")
-                        os.system("python3.8 " + os.path.join(name, mode_simulations))
+                        os.system("python3 " + os.path.join(name, mode_simulations))
 
                     # =========================================================
                     # 2. Post-processing
@@ -57,4 +57,4 @@ if __name__ == "__main__":
 
                     else:
                         name = config["experiment"]["name"]
-                        os.system("python3.8 " + os.path.join(name, mode_postprocessing))
+                        os.system("python3 " + os.path.join(name, mode_postprocessing))
