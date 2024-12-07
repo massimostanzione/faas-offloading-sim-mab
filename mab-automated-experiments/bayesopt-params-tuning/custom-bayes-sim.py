@@ -132,7 +132,9 @@ if __name__ == "__main__":
         else:
             print("what?")
             exit(1)
-
+        threshold = config.getfloat("parameters", "improvement-threshold")
+        window_size = config.getint("parameters", "sliding-window-size")
+        improvements = []
         for ax_pre in axis_pre:
             for ax_post in axis_post:
                 optimizer = BayesianOptimization(
@@ -141,17 +143,50 @@ if __name__ == "__main__":
                     verbose=2,
                     random_state=1,
                 )
-                optimizer.maximize(
-                    init_points=config.getint("parameters", "rand-points"),
-                    n_iter=config.getint("parameters", "iterations"),
-                )
+                best_value = float('-inf')
+                init_points = config.getint("parameters", "rand-points")
+                n_iter = config.getint("parameters", "iterations")
+
+                # init points
+                optimizer.maximize(init_points=init_points, n_iter=0)
+                actual_iters=0
+
+                # iterations
+                for i in range(n_iter):
+                    optimizer.maximize(init_points=0, n_iter=1)
+
+                    current_best = optimizer.max["target"]
+                    improvement = current_best - best_value
+
+                    # sliding window for the improvements
+                    if len(improvements) >= window_size:
+                        improvements.pop(0)
+                    improvements.append(improvement)
+
+                    # check convergence, according to window size
+                    if len(improvements) == window_size and sum(improvements) / window_size < threshold:
+                        actual_iters=i+1
+                        print(f"Convergence obtained after {actual_iters} iterations.")
+                        break
+
+                    actual_iters=i
+                    best_value = current_best
 
                 output_file = (EXPNAME + "/results/OUTPUT")
-
+                needs_header = not os.path.exists(output_file)
+                valprint = {key: float(value) for key, value in optimizer.max['params'].items()}
                 with open(output_file, "a") as file:
-                    file.write('{0:19} {{avgst={5:2}, init={6:2}, iter={7:2}}} {1:8} {2:10} > {3:10} {4}\n'
-                               .format(str(timestamp), strat, ax_pre, ax_post,
-                                       optimizer.max['params'].__str__(),
+                    if needs_header:
+                        file.write("startdate  starttim sta ran min max act strategy axis_pre   > axis_post  output\n")
+                        file.write("------------------------------------------------------------------------------------------------------------------------\n")
+                    file.write('{0:19} {1:3} {2:3} {3:3} {4:3} {5:3} {6:8} {7:10} > {8:10} {9}\n'
+                               .format(str(timestamp),
                                        config.getint("parameters", "objfn-stabilizations-iterations"),
                                        config.getint("parameters", "rand-points"),
-                                       config.getint("parameters", "iterations")))
+                                       window_size,
+                                       config.getint("parameters", "iterations"),
+                                       actual_iters,
+                                       strat,
+                                       ax_pre, ax_post,
+                                       valprint
+                                       ))
