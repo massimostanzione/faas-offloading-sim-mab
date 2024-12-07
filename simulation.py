@@ -358,7 +358,7 @@ class Simulation:
             self.current_lb_policy = lb_policy
             self.schedule(self.mab_update_interval, MABUpdate())
             # Non-stationary case
-            non_stationary=self.config.getboolean(conf.SEC_SIM, conf.MAB_NON_STATIONARY_ENABLED, fallback=False)
+            non_stationary=self.config.getboolean(conf.SEC_MAB, conf.MAB_NON_STATIONARY_ENABLED, fallback=False)
             if non_stationary:
                 self.schedule(3600, RewardUpdate())
 
