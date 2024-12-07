@@ -163,11 +163,11 @@ class MABExperiment:
         rundup = self.rundup
         print(f"Starting experiment {self.name}...")
         for strategy in self.strategies:
-            filtered_params = self._filter_params(strategy)
-            ranges = [np.arange(param.start, param.end + param.step, param.step) for param in filtered_params]
-            param_combinations = itertools.product(*ranges)
             for ax_pre in self.axis_pre:
                 for ax_post in self.axis_post:
+                    filtered_params = self._filter_params(strategy)
+                    ranges = [np.arange(param.start, param.end + param.step, param.step) for param in filtered_params]
+                    param_combinations = itertools.product(*ranges)
                     for combination in param_combinations:
                         rounded_combination = [round(value, 2) for value in combination]
                         param_names = [p.name for p in filtered_params]
