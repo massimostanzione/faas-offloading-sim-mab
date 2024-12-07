@@ -1,1 +1,2 @@
-# faas-offloading-sim-mab
+# faas-offloading-sim-mab (DISCONTINUED)
+#### → Moved to [massimostanzione/faas-offloading-sim](https://github.com/massimostanzione/faas-offloading-sim)
