@@ -98,6 +98,7 @@ def compute_total_reward(mabfile, statsfile):
     rewards = []
     for d in data:
         rewards.append(d['reward'])
+    f.close()
     total_reward += sum(rewards) / len(rewards)
     return total_reward
 
